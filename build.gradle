@@ -1,0 +1,44 @@
+apply plugin: 'java'
+apply plugin: 'idea'
+
+sourceCompatibility = 1.5
+targetCompatibility = 1.5
+
+version = '0.1'
+
+project.ext {
+    dexDir = new File('build/dex')
+    distDir = new File('./dist')
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile fileTree(dir: androidSdkHome + '/platforms/' + androidSdkTarget, include: '*.jar')
+    compile group: 'junit', name: 'junit', version: '4.11'
+}
+
+jar {
+    doLast {
+        tasks.dex.execute()
+    }
+}
+
+task dex(dependsOn: jar, type:Exec) {
+    println 'Building dex...'
+    project.dexDir.mkdirs()
+    workingDir '.'
+    commandLine androidSdkHome + '/' + androidSdkBuildToolsDir + '/' + 'dx', '--dex', '--no-strict', '--output=' + buildDir +'/dex/' + project.name + '.jar', jar.archivePath
+    doLast {
+        tasks.dist.execute()
+    }
+}
+
+task dist(dependsOn:dex, type:Copy) {
+    project.distDir.mkdirs()
+    from(project.dexDir)
+    into(project.distDir)
+    include('*.jar')
+}
